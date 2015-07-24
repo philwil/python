@@ -1,0 +1,44 @@
+!/usr/bin/python
+#coding:utf-8
+
+class Demo(object):
+    def __init__(self,x):
+        self.x = x
+
+    @classmethod
+    def addone(self, x):
+        return x+1
+
+    @staticmethod
+    def addtwo(x):
+        return x+2
+
+    def addthree(self, x):
+        return x+3
+
+def main():
+    print Demo.addone(2)
+    print Demo.addtwo(2)
+
+    #print Demo.addthree(2) #Error
+    demo = Demo(2)
+    print demo.addthree(2)
+
+
+if __name__ == '__main__':
+    main()
+
+
+up vote
+3
+down vote
+accepted
+Someone can't create an instance of your SpecialDict as a dictionary literal, because a dictionary literal is just that; a normal dictionary.
+
+As far as setting items with square bracket notation, as in mySpecialDict['hello'] = 54, that just corresponds to mySpecialDict.__setitem__('hello', 54). Likewise retrieving an item with the square bracket notation corresponds to an invocation of the __getitem__ method. This is true no matter what class mySpecialDict is; whether it's an ordinary dictionary, a class that subclasses the builtin dict, or some entirely unrelated class. So you can just implement those methods to change what they do (using super(SpecialDict, self).__setitem__(key, value) or dict.__setitem__(self, key, value) to refer to the normal implementation, when you need to).
+
+One problem you will run into is that some (all?) of the builtin implementation of other dict methods will not respect your overridden __setitem__ or __getitem__. So you won't be able to inherit them; you'll have to override all of them and either completely re-implement them in terms of your versions of the basic operations, or at least run your validations "around" the superclass calls.
+
+A much less painful approach might actually be to not subclass the builtin dict, and instead implement a custom "dict-like" object that wraps an ordinary dictionary, using the collections.Mapping or collections.MutableMapping base classes to get the dictionary interface. Using this approach you'll only need to implement about 6 basic methods yourself (which you'd do by plugging in your validation logic around calls to the wrapped dictionary), and get sensible definitions of other methods based on them. See http://docs.python.org/library/collections.html#collections-abstract-base-classes
+
+https://docs.python.org/2/reference/datamodel.html#object.__getitem__
